@@ -23,7 +23,7 @@ def hard_sampler_full_wrapper(margin):
     diagonal = tf.linalg.diag_part(S)
     #print(diagonal)
     reshaped = tf.expand_dims(diagonal, axis = 1)#tf.reshape(diagonal,(s[0],1))
-    print(reshaped.shape)
+    #print(reshaped.shape)
     # Proceed to substract the diagonal to the sims matrix 
     vid_contrast = S - reshaped + margin
     sen_contrast = St - reshaped + margin
