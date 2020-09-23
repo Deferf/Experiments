@@ -1,4 +1,5 @@
-from losses import cos_similarity
+from utils import cos_similarity
+import numpy as np
 
 def rank_matrix(a, b, axis = 0):
     sm = cos_similarity(a,b)
@@ -11,9 +12,9 @@ def recall_k(a,b, k = 1, axis = 0, binary = False):
     for id, row in enumerate(rm):
         items = np.argsort(row.flatten())
         if id in items[:k]:
-        recall.append(1)
+            recall.append(1)
         else:
-        recall.append(0)
+            recall.append(0)
     if binary:
         return recall
     else:

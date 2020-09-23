@@ -1,4 +1,5 @@
 import tensorflow as tf
+from utils import cos_similarity
 
 def naive_max_ranking_roll(y_true,y_p, margin = 0.2):
     y_neg = tf.roll(y_p, shift=1, axis = 0)
@@ -12,8 +13,3 @@ def naive_max_ranking_roll(y_true,y_p, margin = 0.2):
     loss = tf.maximum(0.0, margin + vp_sn - vp_sp) + tf.maximum(0.0, margin + vn_sp - vp_sp)
     loss = tf.reduce_mean(loss) + 1e-12
     return loss
-
-def cos_similarity(a, b):
-    a_norm = tf.math.l2_normalize(a, axis = 1)
-    b_norm = tf.math.l2_normalize(b, axis = 1)
-    return tf.matmul(a_norm,tf.transpose(b_norm))
