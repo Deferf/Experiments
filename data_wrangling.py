@@ -1,6 +1,7 @@
 from datetime import datetime
-
 import tensorflow as tf
+import numpy as np
+
 # Functions for TFRecord exporting
 def _float_feature(value):
   """Returns a float_list from a float / double."""
@@ -44,4 +45,32 @@ def TF_Record_Writer_2_Tensors(filename, serializer_function, features_array):
     for i in range(n_examples):
       example = serializer_function(f0[i], f1[i])
       writer.write(example)
+  print("Successfully written on " + f)
+
+def TF_Record_Writer_2_Tensors_Iterative_Batch(filename, serializer_function, features_array,mapping_function):
+  # filename = path
+  # serializer_function = will transform features into tfrecord compatible format
+  # features_array = expects an array with features to be stored into the format [[f0,f1], [f1]]
+  # mapping functions = a funciton to call per feature, same length as features array
+  assert len(features_array) == len(mapping_function)
+  f0 = features_array[0] # visual names -> sentence
+  f1 = features_array[1] # literal sentences -> captions
+  timestamp = datetime.now().strftime(" %y_%m_%d %H:%M:%S")
+  f = filename + timestamp + ".tfrecord"
+  v_curr = ""
+  v_emb = 0
+  with tf.io.TFRecordWriter(f) as writer:
+    for v, v_name in enumerate(f0):
+      if not v_name == v_curr:
+        # current video
+        v_curr = v_name
+        v_emb = mapping_function[0](v_name)
+      # Example a tuple with the concatenation of visual and text embeddigns, and text embeddings
+      # Remember to make them float32
+      # Concatenateee!
+      v_emb_c = tf.convert_to_tensor(np.concatenate([v_emb, f1[v]]), dtype= tf.float32)
+      s_emb = tf.convert_to_tensor(f1[v], dtype= tf.float32)
+      example = serializer_function(v_emb_c, s_emb)
+      writer.write(example)
+      print("'\r{0}".format(v), end='')
   print("Successfully written on " + f)
