@@ -78,11 +78,17 @@ def proxy_sampler_wrapper(margin = 0.2, n = 1):
     v,c = tf.split(y_pred, 2, axis = 1)
     S = cos_similarity(v,c)
     St = tf.transpose(S)
+    diagonal = tf.linalg.diag_part(S)
+    #print(diagonal)
+    reshaped = tf.expand_dims(diagonal, axis = 1)#tf.reshape(diagonal,(s[0],1))
     # Extract from the v-c sim matrix the positions obtained by the proxy
     values_s = tf.gather(S,indices_p, batch_dims=1)
     values_st = tf.gather(St,indices_p, batch_dims=1)
 
-    b_loss = tf.maximum(0.0, values_s + margin) + tf.maximum(0.0, values_st + margin)
+    vid_contrast = values_s - reshaped #+ margin
+    sen_contrast = values_st - reshaped #+ margin
+
+    b_loss = tf.maximum(0.0, vid_contrast + margin) + tf.maximum(0.0, sen_contrast + margin)
     b_sum = tf.reduce_sum(b_loss, axis = -1) # Should be mean
     return tf.reduce_mean(b_sum)
   return proxy_sampler
