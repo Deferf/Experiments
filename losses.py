@@ -1,7 +1,7 @@
 import tensorflow as tf
 from utils import cos_similarity
 
-def naive_max_ranking_roll_wrapper(margin = 0.2):
+def naive_max_ranking_roll_wrapper(margin = 0.2, n = 0):
     def naive_max_ranking_roll(y_true,y_p, margin):
         y_neg = tf.roll(y_p, shift=1, axis = 0)
         vidp, senp = tf.split(y_p, 2, axis = 1)
@@ -16,7 +16,7 @@ def naive_max_ranking_roll_wrapper(margin = 0.2):
         return loss
     return naive_max_ranking_roll
 
-def hard_sampler_full_wrapper(margin = 0.2):
+def hard_sampler_full_wrapper(margin = 0.2, n = 0):
   def hard_sampler_full(y_true, y_pred):
     # We obtain the similarity matrix and its diagonal
     v,c = tf.split(y_pred, 2, axis = 1)
