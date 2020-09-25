@@ -60,14 +60,8 @@ def proxy_sampler_wrapper(margin = 0.2, n = 1):
   def proxy_sampler(y_true, y_pred):
     # We obtain the similarity matrix of sentences and its diagonal
     C = cos_similarity(y_true,y_true)
-    c_diagonal = tf.linalg.diag_part(C)
-    #print(diagonal)
-    c_reshaped = tf.expand_dims(c_diagonal, axis = 1)#tf.reshape(diagonal,(s[0],1))
-    #print(reshaped.shape)
-    # Proceed to substract the diagonal to the sims matrix 
-    proxy_contrast = C - c_reshaped #+ margin
-    # Here vid_contrast is negative to obtain the position of the most dissimilar sentences
-    indices_p = tf.math.top_k(-proxy_contrast, k = n)[1]
+    # Here C is negative to obtain the position of the most dissimilar sentences
+    indices_p = tf.math.top_k(-C, k = n)[1]
     # Now we start with v and c similarity
     v,c = tf.split(y_pred, 2, axis = 1)
     S = cos_similarity(v,c)
@@ -75,9 +69,6 @@ def proxy_sampler_wrapper(margin = 0.2, n = 1):
     # Extract from the v-c sim matrix the positions obtained by the proxy
     values_s = tf.gather(S,indices_p, batch_dims=1)
     values_st = tf.gather(St,indices_p, batch_dims=1)
-
-    b_loss = tf.maximum(0.0, values_s + margin) + tf.maximum(0.0, values_st + margin)
-    b_sum = tf.reduce_sum(b_loss, axis = -1) # Should be mean
 
     b_loss = tf.maximum(0.0, values_s + margin) + tf.maximum(0.0, values_st + margin)
     b_sum = tf.reduce_sum(b_loss, axis = -1) # Should be mean

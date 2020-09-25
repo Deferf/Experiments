@@ -37,8 +37,6 @@ def serialize_example_2_Tensors(feature0, feature1):
 
 # Functions for TFRecord importing
 def parse_function_2_Tensors(example_proto):
-    example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
-
     feature_description = {
     'feature0': tf.io.FixedLenFeature([], tf.string, default_value=''),
     'feature1': tf.io.FixedLenFeature([], tf.string, default_value='')
@@ -50,7 +48,6 @@ def parse_function_2_Tensors(example_proto):
     pair['feature1'] = tf.io.parse_tensor(pair['feature1'], tf.float32)
 
     return pair['feature0'], pair['feature1']
-
 
 
 def TF_Record_Writer_2_Tensors(filename, serializer_function, features_array):
