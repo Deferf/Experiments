@@ -35,6 +35,24 @@ def serialize_example_2_Tensors(feature0, feature1):
   example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
   return example_proto.SerializeToString()
 
+# Functions for TFRecord importing
+def parse_function_2_Tensors(example_proto):
+    example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
+
+    feature_description = {
+    'feature0': tf.io.FixedLenFeature([], tf.string, default_value=''),
+    'feature1': tf.io.FixedLenFeature([], tf.string, default_value='')
+    }
+
+    # Parse the input `tf.train.Example` proto using the dictionary above.
+    pair = tf.io.parse_single_example(example_proto, feature_description)
+    pair['feature0'] = tf.io.parse_tensor(pair['feature0'], tf.float32)
+    pair['feature1'] = tf.io.parse_tensor(pair['feature1'], tf.float32)
+
+    return pair['feature0'], pair['feature1']
+
+
+
 def TF_Record_Writer_2_Tensors(filename, serializer_function, features_array):
   f0 = features_array[0]
   f1 = features_array[1]
@@ -68,10 +86,11 @@ def TF_Record_Writer_2_Tensors_Iterative_Batch(filename, serializer_function, fe
       # Example a tuple with the concatenation of visual and text embeddigns, and text embeddings
       # Remember to make them float32
       # Concatenateee!
-      s_emb_c = mapping_function[0](f1[v])
-      v_emb_c = tf.convert_to_tensor(np.concatenate([v_emb, s_emb_c), dtype= tf.float32)
-      s_emb = tf.convert_to_tensor(s_emb_c), dtype= tf.float32)
+      s_emb_c = mapping_function[1](f1[v])
+      v_emb_c = tf.convert_to_tensor(np.concatenate([v_emb, s_emb_c]), dtype= tf.float32)
+      s_emb = tf.convert_to_tensor(s_emb_c, dtype= tf.float32)
       example = serializer_function(v_emb_c, s_emb)
       writer.write(example)
       print("'\r{0}".format(v), end='')
   print("Successfully written on " + f)
+
