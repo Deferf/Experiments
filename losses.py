@@ -140,7 +140,7 @@ def iterative_loss_wrapper(margin = 0.2, n = 1,):
 
 # Dude this does work but I dont know why :(())
 def proxy_sampler_wrapper_2(margin = 0.2, n = 1):
-  def loss(y_true, y_pred):
+  def proxy_sampler_2(y_true, y_pred):
     proxy = cos_similarity(y_true, y_true)
     v,c = tf.split(y_pred, 2, axis = 1)
     S = cos_similarity(v,c)
@@ -156,6 +156,4 @@ def proxy_sampler_wrapper_2(margin = 0.2, n = 1):
     b_loss = tf.maximum(0.0, vid_contrast) + tf.maximum(0.0, sen_contrast)
     b_sum = tf.reduce_sum(b_loss, axis = -1) # Should be mean
     return tf.reduce_mean(b_sum)
-
-    return proxy
-  return loss
+  return proxy_sampler_2
