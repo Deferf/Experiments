@@ -6,12 +6,18 @@ def naive_max_ranking_roll_wrapper(margin = 0.2, n = 0):
         y_neg = tf.roll(y_p, shift=1, axis = 0)
         vidp, senp = tf.split(y_p, 2, axis = 1)
         vidn, senn = tf.split(y_neg, 2, axis = 1)
-
+        # It's called Roll because treats its neighbor as negative
         vp_sn = cos_similarity(vidp, senn)
+        d_vp_sn = tf.linalg.diag_part(vp_sn)
+        r_vp_sn = tf.expand_dims(d_vp_sn, axis = 1)
         vp_sp = cos_similarity(vidp, senp)
+        d_vp_sp = tf.linalg.diag_part(vp_sp)
+        r_vp_sp = tf.expand_dims(d_vp_sp, axis = 1)
         vn_sp = cos_similarity(vidn, senp)
+        d_vn_sp = tf.linalg.diag_part(vn_sp)
+        r_vn_sp = tf.expand_dims(d_vn_sp, axis = 1)
         # Max ranking loss
-        loss = tf.maximum(0.0, margin + vp_sn - vp_sp) + tf.maximum(0.0, margin + vn_sp - vp_sp)
+        loss = tf.maximum(0.0, margin + r_vp_sn - r_vp_sp) + tf.maximum(0.0, margin + r_vn_sp - r_vp_sp)
         loss = tf.reduce_mean(loss) + 1e-12
         return loss
     return naive_max_ranking_roll
