@@ -52,15 +52,18 @@ def hard_sampler_wrapper(margin = 0.2, n = 1):
     #print(diagonal)
     reshaped = tf.expand_dims(diagonal, axis = 1)#tf.reshape(diagonal,(s[0],1))
 
-    S = tf.linalg.set_diag(S, tf.math.pow(diagonal,0))
-    St = tf.linalg.set_diag(St, tf.math.pow(diagonal,0))
+    # Set the diagonal to -1 so it is never chosen as the next best candidate
+    S = tf.linalg.set_diag(S, -tf.math.pow(diagonal,0))
+    St = tf.linalg.set_diag(St, -tf.math.pow(diagonal,0))
     #print(reshaped.shape)
-    # Proceed to substract the diagonal to the sims matrix 
-    vid_contrast = S - reshaped #+ margin
-    values_s = tf.math.top_k(vid_contrast, k = n)[0]
-    sen_contrast = St - reshaped #+ margin
-    values_st = tf.math.top_k(sen_contrast, k = n)[0]
-    b_loss = tf.maximum(0.0, values_s + margin) + tf.maximum(0.0, values_st + margin)
+    # Proceed to substract the diagonal to the sims matrix
+    values_s = tf.math.top_k(S, k = n)[0]
+    vid_contrast = values_s - reshaped #+ margin
+
+    values_st = tf.math.top_k(St, k = n)[0]
+    sen_contrast = values_st - reshaped #+ margin
+    
+    b_loss = tf.maximum(0.0, vid_contrast + margin) + tf.maximum(0.0, sen_contrast + margin)
     b_sum = tf.reduce_sum(b_loss, axis = -1) # Should be mean
     return tf.reduce_mean(b_sum)
   return hard_sampler
