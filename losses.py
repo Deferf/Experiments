@@ -92,3 +92,49 @@ def proxy_sampler_wrapper(margin = 0.2, n = 1):
     b_sum = tf.reduce_sum(b_loss, axis = -1) # Should be mean
     return tf.reduce_mean(b_sum)
   return proxy_sampler
+
+def iterative_loss_wrapper(margin = 0.2, n = 1,):
+    def iterative_loss(y_true,y_p):
+        # v and c are the respective video and captions tensors from the batch, shape (b, [repr. dim.])
+        # n is the number of samples per pair
+        # t type of pairs to sample
+
+        # For each datapoint find the 3 most distant
+        v,c = tf.split(y_p, 2, axis = 1)
+
+        # D is supposed to be b x b
+        D = cos_similarity(v,c)
+        print(D, tf.shape(D))
+        # vp_cp is just the repetition for n pairs
+        s = tf.shape(D)
+        # Convert the matrix into vector
+        diagonal = tf.linalg.diag_part(D)
+        reshaped = tf.reshape(diagonal,(s[0],1))
+        # Repeat each item into n columns
+        repeated = tf.tile(reshaped, [1,n])
+        # Again convert matrix into vector
+        vp_cp = tf.reshape(repeated, [n * s[0]])
+
+        # Change dialect, rows represent video
+        # Here we eliminate the diagonal to only choose negatives by ranking the respective rows and columns
+        rows = D - tf.linalg.diag(tf.linalg.diag_part(D)) - tf.eye(s[0])
+        # Columns represent captions
+        columns = tf.transpose(rows)
+
+        values_r = tf.math.top_k(rows, k = n)[0]
+        #values_r = -values_r
+        s_r = tf.shape(values_r)
+
+        values_c = tf.math.top_k(columns, k = n)[0]
+        #values_c = -values_c
+        s_c = tf.shape(values_c)
+        
+        vp_cn = tf.reshape(values_r, [n * s_r[0]])
+        vn_cp = tf.reshape(values_c, [n * s_c[0]])
+
+        loss = tf.maximum(0.0, margin + vp_cn - vp_cp) + tf.maximum(0.0, margin + vn_cp - vp_cp)
+        loss = tf.reduce_mean(loss) + 1e-12
+        return loss
+
+    return iterative_loss
+
