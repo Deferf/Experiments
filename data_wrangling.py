@@ -68,7 +68,7 @@ def TF_Record_Writer_2_Tensors_Iterative_Batch(filename, serializer_function, fe
       # Example a tuple with the concatenation of visual and text embeddigns, and text embeddings
       # Remember to make them float32
       # Concatenateee!
-      s_emb_c = mapping_function[0](f1[v]
+      s_emb_c = mapping_function[0](f1[v])
       v_emb_c = tf.convert_to_tensor(np.concatenate([v_emb, s_emb_c), dtype= tf.float32)
       s_emb = tf.convert_to_tensor(s_emb_c), dtype= tf.float32)
       example = serializer_function(v_emb_c, s_emb)
