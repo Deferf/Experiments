@@ -157,3 +157,29 @@ def proxy_sampler_wrapper_2(margin = 0.2, n = 1):
     b_sum = tf.reduce_sum(b_loss, axis = -1) # Should be mean
     return tf.reduce_mean(b_sum)
   return proxy_sampler_2
+
+def proxy_sampler_wrapper_3(margin = 0.2, n = 1):
+  def proxy_sampler_3(y_none, y_pred):
+    v, c, y_true = tf.split(y_pred, [2048,2048,768], axis = 1)
+    C = cos_similarity(y_true,y_true)
+    values_p, indices_p = tf.math.top_k(-C, k = n)
+    
+    S = cos_similarity(v,c)
+    St = tf.transpose(S)
+
+    diagonal = tf.linalg.diag_part(S)
+
+    reshaped = tf.expand_dims(diagonal, axis = 1)
+    
+    values_s = tf.gather(S,indices_p, batch_dims=1)
+    values_st = tf.gather(St,indices_p, batch_dims=1)
+
+    vid_contrast = values_s - reshaped + margin
+    sen_contrast = values_st - reshaped + margin
+    
+    b_loss = tf.maximum(0.0, vid_contrast) + tf.maximum(0.0, sen_contrast)
+    
+    b_sum = tf.reduce_sum(b_loss, axis = -1)
+    
+    return b_sum
+  return proxy_sampler_3
