@@ -17,7 +17,7 @@ def center_branch_simple_model(dim_left, dim_right, dim_dense = 2048, activation
   return Model(inputs=[center_input], outputs=salida)
 
 # Model with a extra branch to concatenate layer
-  def center_branch_simple_model_3(dim_left, dim_right, dim_dense = 2048, activation = "relu", bias = False):
+def center_branch_simple_model_3(dim_left, dim_right, dim_dense = 2048, activation = "relu", bias = False):
   center_input = Input(shape=(dim_left + dim_right), name='center_input')
 
   center_left = Lambda(lambda x: x[:,:dim_left])(center_input)
