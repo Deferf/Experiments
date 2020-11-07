@@ -56,9 +56,10 @@ def TF_Record_Writer_2_Tensors(filename, serializer_function, features_array):
   n_examples = f0.shape[0]
   timestamp = datetime.now().strftime(" %y_%m_%d %H:%M:%S")
   f = filename + timestamp + ".tfrecord"
+  print(tf.convert_to_tensor(f0[0]).shape)
   with tf.io.TFRecordWriter(f) as writer:
     for i in range(n_examples):
-      example = serializer_function(f0[i], f1[i])
+      example = serializer_function(tf.convert_to_tensor(f0[i]), tf.convert_to_tensor(f1[i]))
       writer.write(example)
   print("Successfully written on " + f)
 
