@@ -1,6 +1,7 @@
 from utils import cos_similarity
 import numpy as np
 import tensorflow as tf
+import statistics
 
 def rank_matrix(a, b):
     sm = cos_similarity(a,b)
