@@ -45,3 +45,20 @@ def rank_at_k(alpha,beta, k = [1,5,10], s = 1):
   metrics = {"R@" + str(a): [results[a]/length] for a in results} # dict composition
   metrics["MedRank"] = statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
   return metrics # ta ta!
+
+def rank_at_k_precomputed(sim_map, k = [1,5,10]):
+  # This functions is based on matrix manipulation for speed.
+  sim_map = tf.convert_to_tensor(sim_map)
+  # Obtains first argsort matrix, where first places are at the left
+  sim_map_sort = tf.argsort(sim_map,axis=-1,direction='DESCENDING')
+
+  # Obtains second argosrt matrix where firstplaces are at diagonals
+  sim_map_sort_2 = tf.argsort(sim_map_sort,axis=-1,direction='ASCENDING')
+
+  length = sim_map.shape[0] # total observations
+  diagonal = tf.linalg.tensor_diag_part(sim_map_sort_2).numpy() # diagonal
+  results = {clip: sum((diagonal < clip) + 0)  for clip in k} # sum of observations whose values are below k
+
+  metrics = {"R@" + str(a): [results[a]/length] for a in results} # dict composition
+  metrics["MedRank"] = statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
+  return metrics # ta ta!
