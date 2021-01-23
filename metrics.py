@@ -30,24 +30,18 @@ def recall_metrics(alpha,beta, k = [1,5,10], s = 1):
 
 
 def rank_at_k(alpha,beta, k = [1,5,10], s = 1):
-  # To create the rectangular rank matrix we need some milestones to divide
-  length = alpha.shape[0] #height
-  limits = [a+1 for a in range(0,length,int(length/s))] # creates upper limits
-  start = 0
-  results = {a: 0 for a in k}
-  rank_list = []
-  for l in limits:
-    end = l
-    rm = rank_matrix(alpha[start:end],beta) # a rectangle size limit size x width, with rows argsorted
+  # This functions is based on matrix manipulation for speed.
+  sim_map = tf.matmul(alpha, tf.transpose(beta))
+  # Obtains first argsort matrix, where first places are at the left
+  sim_map_sort = tf.argsort(sim_map,axis=-1,direction='DESCENDING')
 
-    for i,row in enumerate(rm):
-      rank_list.append(int(row[start + i]) + 1) # identify the sorting position and add 1 to convert to rank
-      for clip in k:
-        if start + i in row[:clip]:
-          results[clip] = results[clip] + 1
+  # Obtains second argosrt matrix where firstplaces are at diagonals
+  sim_map_sort_2 = tf.argsort(sim_map_sort,axis=-1,direction='ASCENDING')
 
-    start = end
-  
-  metrics = {"R@" + str(a): [results[a]/length] for a in results}
-  metrics["MedRank"] = statistics.median(rank_list)
-  return metrics
+  length = alpha.shape[0] # total observations
+  diagonal = tf.linalg.tensor_diag_part(sim_map_sort_2).numpy() # diagonal
+  results = {clip: sum((diagonal < clip) + 0)  for clip in k} # sum of observations whose values are below k
+
+  metrics = {"R@" + str(a): [results[a]/length] for a in results} # dict composition
+  metrics["MedRank"] = statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
+  return metrics # ta ta!
