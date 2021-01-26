@@ -52,7 +52,7 @@ def rank_at_k_precomputed(sim_map, k = [1,5,10]):
   # Obtains first argsort matrix, where first places are at the left
   sim_map_sort = tf.argsort(sim_map,axis=-1,direction='DESCENDING')
 
-  # Obtains second argosrt matrix where firstplaces are at diagonals
+  # Obtains second argosrt matrix where diagonals reflect the ranking of the pair itself
   sim_map_sort_2 = tf.argsort(sim_map_sort,axis=-1,direction='ASCENDING')
 
   length = sim_map.shape[0] # total observations
@@ -60,5 +60,6 @@ def rank_at_k_precomputed(sim_map, k = [1,5,10]):
   results = {clip: sum((diagonal < clip) + 0)  for clip in k} # sum of observations whose values are below k
 
   metrics = {"R@" + str(a): [results[a]/length] for a in results} # dict composition
-  metrics["MedRank"] = statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
+  metrics["Median_Rank"] = statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
+  metrics["Mean_Rank"] = statistics.mean(list(diagonal + 1) )
   return metrics # ta ta!
