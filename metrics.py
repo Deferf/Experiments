@@ -48,6 +48,7 @@ def rank_at_k_precomputed(sim_map, k = [1,5,10]):
   results = {clip: sum((diagonal < clip) + 0)  for clip in k} # sum of observations whose values are below k
 
   metrics = {"R@" + str(a): [results[a]/length] for a in results} # dict composition
-  metrics["Median_Rank"] = float(torch.median(diagonal + 1))#statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
-  metrics["Mean_Rank"] = float(torch.mean(diagonal + 1))#statistics.mean(list(diagonal + 1) )
+  metrics["Median_Rank"] = float(np.median(diagonal + 1))#statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
+  metrics["Mean_Rank"] = float(np.mean(diagonal + 1))#statistics.mean(list(diagonal + 1) )
+  metrics["Std_Rank"] = float(np.std(diagonal + 1))
   return metrics # ta ta!
