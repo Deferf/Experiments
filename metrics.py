@@ -90,3 +90,56 @@ def rank_at_k_precomputed_rectangular(sim_map, k = [1,5,10], aux = None, diag = 
     return metrics, diagonal
   else:
     return metrics
+
+
+def generate_sim_tensor(dict_text, dict_video, order):
+  # Input dicts of encoded text and video, keys must match
+  # Assumes relationship video-text is one-to-many
+  # Hence, there may be multiple captions associated to a video
+  # To have an uniform shape across instances we pad with -inf
+  padded_text_dict = pad_dict(text_dict)
+
+  # We use stack to group onto a new dimension
+  text_tensor = torch.stack([padded_text_dict[k] for k in order], dim = 0)
+  # We use cat to group onto an existing dimension
+  video_tensor = torch.cat([torch.mean(video_dict[k], dim = 0, keepdim = True) for k in order])
+  # We will represent this as a tensor of size (number of instances, max caption of any instance, number of video) 
+  sim_tensor = (text_tensor @ video_tensor.T)
+
+  return sim_tensor
+
+def tensor_video_to_text_sim(sim_tensor):
+  # Forms a similarity matrix for use with rank at k
+  values, _ = torch.max(sim_tensor, dim = 1,keepdim=True)
+  return torch.squeeze(values).T
+
+def tensor_video_to_text_sim(sim_tensor, top_k = [1,5,10]):
+  # Permute sim_tensor so it represents a sequence of text-video similarity matrices.
+  # Then obtain the double argsort to position the rank on the diagonal
+  stacked_sim_matrices = sim_tensor.permute(1,0,2)
+  first_argsort = torch.argsort(stacked_sim_matrices, dim = -1, descending= True)
+  second_argsort = torch.argsort(first_argsort, dim = -1, descending= False)
+
+  # Permute second_argsort so we can extract the diagonal of each text-video similarity matrices
+  modified_sa = second_argsort.permute((2,1,0))
+  # Extracts ranks i.e diagonals
+  ranks = torch.flatten( torch.diagonal(modified_sa))
+
+  # Now we need to extract valid ranks, as some belong to inf padding values
+  mask = ~ torch.isinf(torch.flatten(torch.diagonal(stacked_sim_matrices.T)))
+  valid_ranks = ranks[mask]
+  # A quick dimension check validates our results, there may be other correctness tests pending
+  # Such as dot product localization, but that is for other time.
+  #assert int(valid_ranks.shape[0]) ==  sum([len(text_dict[k]) for k in text_dict])
+
+  return list_recall(lst, top_k)
+
+def list_recall(lst, top_k):
+  # Most of the time we end up with a list (or diagonal) that contains all the ranks
+  # We want to obtain results from that
+  lst = torch.tensor(lst)
+  results = {f"R@{k}" : float(torch.sum(valid_ranks < k) / len(valid_ranks)) for k in top_k}
+  results["Median_Rank"] = float(torch.median(diagonal + 1))
+  results["Mean_Rank"] = float(torch.mean(diagonal + 1))
+  results["Std_Rank"] = float(torch.stf(diagonal + 1))
+  return results 
