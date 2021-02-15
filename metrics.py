@@ -137,13 +137,14 @@ def tensor_video_to_text_sim(sim_tensor, top_k = [1,5,10]):
   # Such as dot product localization, but that is for other time.
   #assert int(valid_ranks.shape[0]) ==  sum([len(text_dict[k]) for k in text_dict])
 
-  return list_recall(lst, top_k)
+  return list_recall(valid_ranks, top_k)
 
 def list_recall(lst, top_k):
   # Most of the time we end up with a list (or diagonal) that contains all the ranks
   # We want to obtain results from that
-  lst = torch.tensor(lst)
-  results = {f"R@{k}" : float(torch.sum(valid_ranks < k) / len(valid_ranks)) for k in top_k}
+  if type(lst) == list:
+    lst = torch.tensor(lst)
+  results = {f"R@{k}" : float(torch.sum(lst < k) / len(valid_ranks)) for k in top_k}
   results["Median_Rank"] = float(torch.median(diagonal + 1))
   results["Mean_Rank"] = float(torch.mean(diagonal + 1))
   results["Std_Rank"] = float(torch.stf(diagonal + 1))
