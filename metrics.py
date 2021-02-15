@@ -1,6 +1,7 @@
 from utils import cos_similarity
 import numpy as np
 import tensorflow as tf
+import torch
 import statistics
 
 def rank_matrix(a, b):
@@ -92,7 +93,7 @@ def rank_at_k_precomputed_rectangular(sim_map, k = [1,5,10], aux = None, diag = 
     return metrics
 
 
-def pad_dict(input, d = 8):
+def pad_dict(input, d = 512):
   max_length = max([input[k].shape[0] for k in input])
   return {k: torch.cat([input[k], torch.full((max_length - input[k].shape[0], d), float("-inf"))]) for k in input}
 
