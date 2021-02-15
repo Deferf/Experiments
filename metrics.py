@@ -92,6 +92,10 @@ def rank_at_k_precomputed_rectangular(sim_map, k = [1,5,10], aux = None, diag = 
     return metrics
 
 
+def pad_dict(input, d = 8):
+  max_length = max([input[k].shape[0] for k in input])
+  return {k: torch.cat([input[k], torch.full((max_length - input[k].shape[0], d), float("-inf"))]) for k in input}
+
 def generate_sim_tensor(dict_text, dict_video, order):
   # Input dicts of encoded text and video, keys must match
   # Assumes relationship video-text is one-to-many
