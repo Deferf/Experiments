@@ -35,7 +35,7 @@ def rank_at_k(alpha,beta, k = [1,5,10], s = 1):
   sim_map = tf.matmul(alpha, tf.transpose(beta))
   return rank_at_k_precomputed(sim_map, k = k)
 
-def rank_at_k_precomputed(sim_map, k = [1,5,10]):
+def rank_at_k_precomputed(sim_map, k = [1,5,10], diag = False):
   # This functions is based on matrix manipulation for speed.
   sim_map = tf.convert_to_tensor(sim_map)
   # Obtains first argsort matrix, where first places are at the left
@@ -46,13 +46,19 @@ def rank_at_k_precomputed(sim_map, k = [1,5,10]):
 
   length = sim_map.shape[0] # total observations
   diagonal = tf.linalg.tensor_diag_part(sim_map_sort_2).numpy() # diagonal
-  results = {clip: sum((diagonal < clip) + 0)  for clip in k} # sum of observations whose values are below k
+  """results = {clip: sum((diagonal < clip) + 0)  for clip in k} # sum of observations whose values are below k
 
   metrics = {"R@" + str(a): [results[a] * 100/length] for a in results} # dict composition
   metrics["Median_Rank"] = float(np.median(diagonal + 1))#statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
   metrics["Mean_Rank"] = float(np.mean(diagonal + 1))#statistics.mean(list(diagonal + 1) )
-  metrics["Std_Rank"] = float(np.std(diagonal + 1))
-  return metrics # ta ta!
+  metrics["Std_Rank"] = float(np.std(diagonal + 1))"""
+  if diag:
+    #return metrics, diagonal
+    return list_recall(diagonal, k), diagonal
+  else:
+    #return metrics
+    return list_recall(diagonal, k)
+
 
 
 def stack_encoded_dict(dictionary, order, processing = lambda x : x):
@@ -71,31 +77,32 @@ def rank_at_k_precomputed_rectangular(sim_map, k = [1,5,10], aux = None, diag = 
   sim_map = tf.convert_to_tensor(sim_map)
   # Obtains first argsort matrix, where first places are expected to be at the left
   sim_map_sort = tf.argsort(sim_map,axis=-1,direction='DESCENDING')
-
   # In case of a rectangular matrix an aux vector should be supplied
   if aux != None:
     assert length == aux.shape[0]
     _, diagonal = tf.split(tf.where(sim_map_sort == aux), 2, axis = -1)
+    diagonal = diagonal.numpy()
     #print(tf.cast(diagonal < 1, tf.int16))
   else:
     # Obtains second argsort matrix where diagonals reflect the ranking of the pair itself
     sim_map_sort_2 = tf.argsort(sim_map_sort,axis=-1,direction='ASCENDING')
     diagonal = tf.linalg.tensor_diag_part(sim_map_sort_2).numpy() # diagonal
-
-  results = {clip: tf.reduce_sum(tf.cast(diagonal < clip, tf.int64))  for clip in k} # sum of observations whose values are below k
+  """  results = {clip: tf.reduce_sum(tf.cast(diagonal < clip, tf.int64))  for clip in k} # sum of observations whose values are below k
   metrics = {"R@" + str(a): [float(results[a] * 100 /length)] for a in results} # dict composition
   metrics["Median_Rank"] = float(np.median(diagonal + 1))#statistics.median(list(diagonal + 1) ) # diagonal is a list of ranks if you add 1
   metrics["Mean_Rank"] = float(np.mean(diagonal + 1))#statistics.mean(list(diagonal + 1) )
-  metrics["Std_Rank"] = float(np.std(diagonal + 1))
+  metrics["Std_Rank"] = float(np.std(diagonal + 1))"""
   if diag:
-    return metrics, diagonal
+    #return metrics, diagonal
+    return list_recall(diagonal, k), diagonal
   else:
-    return metrics
+    return list_recall(diagonal, k)
 
 
 def pad_dict(input, d = 512):
   max_length = max([input[k].shape[0] for k in input])
   return {k: torch.cat([input[k], torch.full((max_length - input[k].shape[0], d), float("-inf"), device = input[k].device)]) for k in input}
+
 
 def generate_sim_tensor(dict_text, dict_video, order):
   # Input dicts of encoded text and video, keys must match
@@ -119,6 +126,9 @@ def tensor_video_to_text_sim(sim_tensor):
   # Forms a similarity matrix for use with rank at k
   values, _ = torch.max(sim_tensor, dim = 1,keepdim=True)
   return torch.squeeze(values).T
+
+
+
 
 def tensor_text_to_video_metrics(sim_tensor, top_k = [1,5,10], return_ranks = False):
   # Permute sim_tensor so it represents a sequence of text-video similarity matrices.
@@ -146,7 +156,7 @@ def tensor_text_to_video_metrics(sim_tensor, top_k = [1,5,10], return_ranks = Fa
 def list_recall(lst, top_k):
   # Most of the time we end up with a list (or diagonal) that contains all the ranks
   # We want to obtain results from that
-  if torch.is_tensor(lst):
+  if not torch.is_tensor(lst):
     lst = torch.tensor(lst)
   results = {f"R@{k}" : float(torch.sum(lst < k) * 100 / len(lst)) for k in top_k}
   results["Median_Rank"] = float(torch.median(lst + 1))
